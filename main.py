@@ -5,15 +5,10 @@ import time
 import pyotp
 import telepot
 from telepot.loop import MessageLoop
-from telepot.namedtuple import InlineKeyboardButton, InlineKeyboardMarkup
 
 # Config
 import config
 import FileWork as fw
-
-kbd_markup = InlineKeyboardMarkup(
-    inline_keyboard=[[InlineKeyboardButton(text="Copy", callback_data="copy_code")]]
-)
 
 
 class password:
@@ -22,7 +17,7 @@ class password:
     """
 
     def __init__(self):
-        self.password = "s"
+        self.password = "vorte"
 
     def setPass(self, pwd):
         self.password = pwd
@@ -47,9 +42,7 @@ def botSendAdmin(msg):
     """
     Sending message to admin chat id
     """
-    bot.sendMessage(
-        config.admin_id, msg, parse_mode="MarkdownV2", reply_markup=kbd_markup
-    )
+    bot.sendMessage(config.admin_id, msg, parse_mode="MarkdownV2")
 
 
 def generateCodes(secure_code):
@@ -57,7 +50,9 @@ def generateCodes(secure_code):
     Generate 2FA Codes
     """
     totp = pyotp.TOTP(secure_code)
-    return "Ваш код: %s" % totp.now()
+    raw_code = str(totp.now())
+    code = raw_code[:3] + "\-" + raw_code[3:]
+    return "Ваш код: %s" % code
 
 
 def getCodes(checkName=None):
@@ -113,7 +108,7 @@ def parseMsg(msg):
 
     command = msg.split(" ")
     if len(command) == 1:
-        if command[0] == "/get":
+        if command[0] == "/adobe":
             getCodes()
         elif command[0] == "/null":
             NullPass()
@@ -129,14 +124,14 @@ def parseMsg(msg):
             else:
                 botSendAdmin("Incorrect 2FA format or/and this name already used")
 
-        elif command[0] == "/get":
-            code = getCodes(checkName=command[1])
-            if code is not None:
-                botSendAdmin(getTime() + "\n" + getCodes(command[1]))
-                # botSendAdmin(getTime() + command[1] + " token is")
-                # botSendAdmin(getCodes(checkName=command[1]))
-            else:
-                botSendAdmin("There is no service with this name.")
+        # elif command[0] == "/":
+        #     code = getCodes(checkName=command[1])
+        #     if code is not None:
+        #         botSendAdmin(getTime() + "\n" + getCodes(command[1]))
+        #         # botSendAdmin(getTime() + command[1] + " token is")
+        #         # botSendAdmin(getCodes(checkName=command[1]))
+        #     else:
+        #         botSendAdmin("There is no service with this name.")
 
         elif command[0] == "/del":
             botSendAdmin("This function now unviable.")
@@ -153,16 +148,12 @@ def handle(msg):
         parseMsg(msg["text"])
 
 
-def handle_cb(msg):
-    print(msg["message"]["text"].split()[2])
-
-
 pwd = password()
 isNotConn = True
 while isNotConn:
     try:
         bot = telepot.Bot(config.token)
-        MessageLoop(bot, {"chat": handle, "callback_query": handle_cb}).run_as_thread()
+        MessageLoop(bot, handle).run_as_thread()
         isNotConn = False
     except Exception as e:
         print(str(e))
